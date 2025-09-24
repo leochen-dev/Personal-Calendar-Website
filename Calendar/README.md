@@ -1,1 +1,0 @@
-This was a project done in lab 4 of CSCI 3308, this serves as an extra credit activity to publicize the website.
