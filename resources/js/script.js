@@ -1,4 +1,5 @@
 const events = [];
+let editingEventIndex = null; // null = creating new, number = editing existing
 
 function updateLocationOptions(modality) {
   const locationField = document.getElementById("location_field");
@@ -19,7 +20,6 @@ function updateLocationOptions(modality) {
 
 function saveEvent() {
   const form = document.getElementById("event_form");
-
   if (!form.checkValidity()) {
     form.reportValidity();
     return;
@@ -41,47 +41,40 @@ function saveEvent() {
     .filter(a => a.length > 0);
 
   const eventDetails = { name, category, weekday, time, modality, location, remote_url, attendees };
-  events.push(eventDetails);
 
-  console.log("Event saved:", eventDetails);
-  console.log("All events:", events);
+  if (editingEventIndex !== null) {
+    // Update existing
+    events[editingEventIndex] = eventDetails;
+    refreshCalendarUI();
+  } else {
+    // Create new
+    events.push(eventDetails);
+    addEventToCalendarUI(eventDetails, events.length - 1);
+  }
 
-  addEventToCalendarUI(eventDetails);
-
+  // Reset
+  editingEventIndex = null;
   const modal = bootstrap.Modal.getInstance(document.getElementById('event_modal'));
   form.reset();
   modal.hide();
   updateLocationOptions("in-person");
 }
 
-function createEventCard(eventDetails) {
+function createEventCard(eventDetails, index) {
   const event_element = document.createElement('div');
-  event_element.className = 'card p-2 m-1 shadow-sm';
-  
+  event_element.className = 'card p-2 m-1 shadow-sm cursor-pointer';
+
   let bgColor;
   switch (eventDetails.category) {
-    case 'work':
-      bgColor = 'bg-info';
-      break;
-    case 'academics':
-      bgColor = 'bg-danger'; 
-      break;
-    case 'personal':
-      bgColor = 'bg-success'; 
-      break;
-    case 'appointments':
-      bgColor = 'bg-warning'; 
-      break;
-    case 'other':
-    default:
-      bgColor = 'bg-secondary'; 
-      break;
+    case 'work': bgColor = 'bg-info'; break;
+    case 'academics': bgColor = 'bg-danger'; break;
+    case 'personal': bgColor = 'bg-success'; break;
+    case 'appointments': bgColor = 'bg-warning'; break;
+    default: bgColor = 'bg-secondary'; break;
   }
+  event_element.classList.add(bgColor, 'text-white');
 
-event_element.classList.add(bgColor, 'text-white');
-
-
-event_element.innerHTML = `
+  event_element.innerHTML = `
     <div><strong>Event Name:</strong> ${eventDetails.name}</div>
     <div><strong>Event Category:</strong> ${eventDetails.category.charAt(0).toUpperCase() + eventDetails.category.slice(1)}</div>
     <div><strong>Event Time:</strong> ${eventDetails.time}</div>
@@ -94,11 +87,51 @@ event_element.innerHTML = `
     <div><strong>Attendees:</strong> ${eventDetails.attendees.join(', ')}</div>
   `;
 
+  // Add click listener for editing
+  event_element.addEventListener("click", () => {
+    openEditModal(index);
+  });
+
   return event_element;
 }
 
-function addEventToCalendarUI(eventInfo) {
-  const event_card = createEventCard(eventInfo);
+function addEventToCalendarUI(eventInfo, index) {
+  const event_card = createEventCard(eventInfo, index);
   const dayDiv = document.getElementById(eventInfo.weekday);
   dayDiv.appendChild(event_card);
+}
+
+function refreshCalendarUI() {
+  // Clear all day columns
+  document.querySelectorAll("#calendar .col-sm").forEach(col => {
+    col.querySelectorAll(".card").forEach(card => card.remove());
+  });
+
+  // Re-render all events
+  events.forEach((event, index) => {
+    addEventToCalendarUI(event, index);
+  });
+}
+
+function openEditModal(index) {
+  const event = events[index];
+  editingEventIndex = index;
+
+  document.getElementById("event_name").value = event.name;
+  document.getElementById("event_category").value = event.category;
+  document.getElementById("event_weekday").value = event.weekday;
+  document.getElementById("event_time").value = event.time;
+  document.getElementById("event_modality").value = event.modality;
+  updateLocationOptions(event.modality);
+
+  if (event.modality === "in-person") {
+    document.getElementById("event_location").value = event.location || "";
+  } else {
+    document.getElementById("event_remote_url").value = event.remote_url || "";
+  }
+
+  document.getElementById("event_attendees").value = event.attendees.join(", ");
+
+  const modal = new bootstrap.Modal(document.getElementById("event_modal"));
+  modal.show();
 }
