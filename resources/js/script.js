@@ -18,7 +18,7 @@ function updateLocationOptions(modality) {
   }
 }
 
-const URL_REGEX = /^(https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(\/.*)?$/;
+const URL_REGEX = /^(https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{3,}(\/.*)?$/;
 
 function saveEvent() {
   const name = document.getElementById("event_name").value.trim();
