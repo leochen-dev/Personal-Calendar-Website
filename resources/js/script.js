@@ -18,18 +18,30 @@ function updateLocationOptions(modality) {
   }
 }
 
-function saveEvent() {
-  const form = document.getElementById("event_form");
-  if (!form.checkValidity()) {
-    form.reportValidity();
-    return;
-  }
+const URL_REGEX = /^(https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(\/.*)?$/;
 
+function saveEvent() {
   const name = document.getElementById("event_name").value.trim();
   const category = document.getElementById("event_category").value;
   const weekday = document.getElementById("event_weekday").value;
   const time = document.getElementById("event_time").value;
   const modality = document.getElementById("event_modality").value;
+  const remoteInput = document.getElementById("event_remote_url");
+
+  if (modality === "remote") {
+    const v = remoteInput.value.trim();
+    if (!URL_REGEX.test(v)) {
+      alert("Please enter a valid URL or domain (e.g. abcd.com or https://abcd.com).");
+      remoteInput.focus();
+      return;
+    }
+  }
+
+  const form = document.getElementById("event_form");
+  if (!form.checkValidity()) {
+    form.reportValidity();
+    return;
+  }
 
   let location = null;
   let remote_url = null;
